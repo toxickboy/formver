@@ -1,17 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { PoseLandmarker, FilesetResolver, DrawingUtils, Landmark } from '@mediapipe/tasks-vision';
+import { PoseLandmarker, FilesetResolver, Landmark } from '@mediapipe/tasks-vision';
 
 type UsePoseDetectionProps = {
-  onPoseResults: (results: Landmark[], timestamp: number) => void;
-  videoRef: React.RefObject<HTMLVideoElement>;
+  onPoseResults: (results: Landmark[]) => void;
 };
 
-export function usePoseDetection({ onPoseResults, videoRef }: UsePoseDetectionProps) {
+export function usePoseDetection({ onPoseResults }: UsePoseDetectionProps) {
   const [isReady, setIsReady] = useState(false);
   const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
   const animationFrameId = useRef<number>();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     async function initializePoseLandmarker() {
@@ -47,25 +47,31 @@ export function usePoseDetection({ onPoseResults, videoRef }: UsePoseDetectionPr
   const predictWebcam = useCallback(() => {
     const video = videoRef.current;
     if (!video || !poseLandmarkerRef.current) {
+      if (animationFrameId.current) {
+        requestAnimationFrame(predictWebcam);
+      }
       return;
     }
 
-    if (video.currentTime !== video.dataset.lastTime) {
-      video.dataset.lastTime = video.currentTime.toString();
+    if (video.currentTime !== (video as any).lastTime) {
+      (video as any).lastTime = video.currentTime;
       const startTimeMs = performance.now();
       const results = poseLandmarkerRef.current.detectForVideo(video, startTimeMs);
 
       if (results.landmarks && results.landmarks.length > 0) {
-        onPoseResults(results.landmarks[0], video.videoWidth);
+        onPoseResults(results.landmarks[0]);
       }
     }
 
-    animationFrameId.current = requestAnimationFrame(predictWebcam);
-  }, [videoRef, onPoseResults]);
+    if (animationFrameId.current) {
+        animationFrameId.current = requestAnimationFrame(predictWebcam);
+    }
+  }, [onPoseResults]);
 
-  const start = useCallback(() => {
+  const start = useCallback((videoElement: HTMLVideoElement) => {
+    videoRef.current = videoElement;
     if (isReady && !animationFrameId.current) {
-      predictWebcam();
+      animationFrameId.current = requestAnimationFrame(predictWebcam);
     }
   }, [isReady, predictWebcam]);
 
@@ -74,6 +80,7 @@ export function usePoseDetection({ onPoseResults, videoRef }: UsePoseDetectionPr
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = undefined;
     }
+    videoRef.current = null;
   }, []);
 
   return { isReady, start, stop };

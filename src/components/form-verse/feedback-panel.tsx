@@ -2,14 +2,26 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Loader } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 type FeedbackPanelProps = {
   repCount: number;
   feedback: string;
   isLoading: boolean;
+  audioUrl: string | null;
 };
 
-export default function FeedbackPanel({ repCount, feedback, isLoading }: FeedbackPanelProps) {
+export default function FeedbackPanel({ repCount, feedback, isLoading, audioUrl }: FeedbackPanelProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (audioUrl && audioRef.current) {
+      audioRef.current.src = audioUrl;
+      audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+    }
+  }, [audioUrl]);
+
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -35,6 +47,7 @@ export default function FeedbackPanel({ repCount, feedback, isLoading }: Feedbac
             <p className="text-sm text-muted-foreground">{feedback}</p>
           )}
         </div>
+        {audioUrl && <audio ref={audioRef} src={audioUrl} controls className="w-full" hidden />}
       </CardContent>
     </Card>
   );

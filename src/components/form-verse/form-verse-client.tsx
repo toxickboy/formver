@@ -11,8 +11,9 @@ import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { getExercises, getExerciseData, Exercise, relevantJoints, Joint } from '@/lib/exercises';
 import { calculateAngle3D } from '@/lib/pose-utils';
 import { generatePersonalizedFormFeedback } from '@/ai/flows/generate-personalized-form-feedback';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, CameraOff, Sparkles, Loader, PersonStanding } from 'lucide-react';
+import { Camera, CameraOff, Loader, PersonStanding } from 'lucide-react';
 import WebcamDisplay from './webcam-display';
 import FeedbackPanel from './feedback-panel';
 
@@ -33,6 +34,7 @@ export function FormVerseClient() {
   const [feedback, setFeedback] = useState<string>('Start your exercise to get real-time feedback.');
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   const [jointFeedback, setJointFeedback] = useState<Record<string, boolean>>({});
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const exerciseData = useMemo(() => getExerciseData(selectedExerciseKey), [selectedExerciseKey]);
 
@@ -40,7 +42,7 @@ export function FormVerseClient() {
     setLandmarks(newLandmarks);
   }, []);
 
-  const { isReady, start, stop } = usePoseDetection({ onPoseResults: handlePoseResults, videoRef });
+  const { isReady, start, stop } = usePoseDetection({ onPoseResults: handlePoseResults });
 
   const toggleWebcam = async () => {
     if (isWebcamOn) {
@@ -59,7 +61,7 @@ export function FormVerseClient() {
           videoRef.current.srcObject = stream;
           videoRef.current.play().then(() => {
             setIsWebcamOn(true);
-            start();
+            start(videoRef.current!);
           });
         }
       } catch (err) {
@@ -75,6 +77,7 @@ export function FormVerseClient() {
   
   const getFeedback = useCallback(async (angles: Record<string, number>, exercise: Exercise) => {
     setIsGeneratingFeedback(true);
+    setAudioUrl(null);
     try {
       const canonicalAngles = exercise.canonicalAngles.contracted;
       const feedbackResponse = await generatePersonalizedFormFeedback({
@@ -87,16 +90,18 @@ export function FormVerseClient() {
       const newJointFeedback: Record<string, boolean> = {};
       let overallFeedback = feedbackResponse.feedback;
 
-      // Basic deviation check
       Object.keys(angles).forEach(joint => {
         const userAngle = angles[joint];
         const canonicalAngle = canonicalAngles[joint as Joint];
         const deviation = Math.abs(userAngle - canonicalAngle);
-        newJointFeedback[joint] = deviation <= 25; // 25 degree tolerance
+        newJointFeedback[joint] = deviation <= 25;
       });
       
       setJointFeedback(newJointFeedback);
       setFeedback(overallFeedback);
+      
+      const audioResponse = await textToSpeech(overallFeedback);
+      setAudioUrl(audioResponse.media);
 
     } catch (error) {
       console.error('Error generating feedback:', error);
@@ -110,23 +115,24 @@ export function FormVerseClient() {
     if (landmarks.length > 0 && isWebcamOn) {
       const { repThresholds, joints } = exerciseData;
       const primaryJointPoints = relevantJoints[repThresholds.joint];
+      if (!primaryJointPoints) return;
+
       const p1 = landmarks[primaryJointPoints[0]];
       const p2 = landmarks[primaryJointPoints[1]];
       const p3 = landmarks[primaryJointPoints[2]];
 
-      if (p1 && p2 && p3 && p1.visibility > 0.5 && p2.visibility > 0.5 && p3.visibility > 0.5) {
+      if (p1 && p2 && p3 && p1.visibility! > 0.5 && p2.visibility! > 0.5 && p3.visibility! > 0.5) {
         const angle = calculateAngle3D(p1, p2, p3);
 
         if (repState === 'extended' && angle < repThresholds.contracted) {
           setRepState('contracted');
-          // Get feedback at point of contraction
           const currentAngles: Record<string, number> = {};
           joints.forEach(joint => {
             const jointKey = joint as keyof typeof relevantJoints;
             const j_p1 = landmarks[relevantJoints[jointKey][0]];
             const j_p2 = landmarks[relevantJoints[jointKey][1]];
             const j_p3 = landmarks[relevantJoints[jointKey][2]];
-            if(j_p1 && j_p2 && j_p3 && j_p1.visibility > 0.5 && j_p2.visibility > 0.5 && j_p3.visibility > 0.5) {
+            if(j_p1 && j_p2 && j_p3 && j_p1.visibility! > 0.5 && j_p2.visibility! > 0.5 && j_p3.visibility! > 0.5) {
               currentAngles[joint] = calculateAngle3D(j_p1, j_p2, j_p3);
             }
           });
@@ -140,11 +146,11 @@ export function FormVerseClient() {
   }, [landmarks, isWebcamOn, exerciseData, repState, getFeedback]);
 
   useEffect(() => {
-    // Reset state on exercise change
     setRepCount(0);
     setRepState('extended');
     setFeedback('Start your exercise to get real-time feedback.');
     setJointFeedback({});
+    setAudioUrl(null);
   }, [selectedExerciseKey]);
 
   return (
@@ -212,6 +218,7 @@ export function FormVerseClient() {
             repCount={repCount}
             feedback={feedback}
             isLoading={isGeneratingFeedback}
+            audioUrl={audioUrl}
           />
 
         </div>
