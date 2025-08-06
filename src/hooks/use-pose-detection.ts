@@ -56,7 +56,7 @@ export function usePoseDetection({ onPoseResults, videoRef }: UsePoseDetectionPr
       const results = poseLandmarkerRef.current.detectForVideo(video, startTimeMs);
 
       if (results.landmarks && results.landmarks.length > 0) {
-        onPoseResults(results.landmarks[0], results.image.width);
+        onPoseResults(results.landmarks[0], video.videoWidth);
       }
     }
 
