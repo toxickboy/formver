@@ -56,12 +56,17 @@ export function FormVerseClient() {
       setRepState('extended');
     } else {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setIsWebcamOn(true);
-          start(videoRef.current!);
+        // Check if we're in a browser environment and if mediaDevices API is available
+        if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+            setIsWebcamOn(true);
+            start(videoRef.current!);
+          }
+        } else {
+          throw new Error('MediaDevices API is not available in this environment');
         }
       } catch (err) {
         console.error('Error accessing webcam:', err);
@@ -87,20 +92,37 @@ export function FormVerseClient() {
       });
 
       const newJointFeedback: Record<string, boolean> = {};
-      let overallFeedback = feedbackResponse.feedback;
+      // Ensure feedback is a string
+      let overallFeedback = feedbackResponse && typeof feedbackResponse === 'object' && typeof feedbackResponse.feedback === 'string' 
+        ? feedbackResponse.feedback 
+        : 'Unable to generate feedback';
 
-      Object.keys(angles).forEach(joint => {
-        const userAngle = angles[joint];
-        const canonicalAngle = canonicalAngles[joint as Joint];
-        const deviation = Math.abs(userAngle - canonicalAngle);
-        newJointFeedback[joint] = deviation <= 25;
-      });
+      // Safely process joint angles
+      if (angles && typeof angles === 'object') {
+        Object.keys(angles).forEach(joint => {
+          const userAngle = angles[joint];
+          const canonicalAngle = canonicalAngles[joint as Joint];
+          if (typeof userAngle === 'number' && typeof canonicalAngle === 'number') {
+            const deviation = Math.abs(userAngle - canonicalAngle);
+            newJointFeedback[joint] = deviation <= 25;
+          } else {
+            newJointFeedback[joint] = false; // Default to false if angles are not numbers
+          }
+        });
+      }
       
       setJointFeedback(newJointFeedback);
       setFeedback(overallFeedback);
       
-      const audioResponse = await textToSpeech(overallFeedback);
-      setAudioUrl(audioResponse.media);
+      try {
+        const audioResponse = await textToSpeech(overallFeedback);
+        if (audioResponse && typeof audioResponse === 'object' && audioResponse.media) {
+          setAudioUrl(audioResponse.media);
+        }
+      } catch (error) {
+        console.error('Error generating audio feedback:', error);
+        // Continue without audio feedback
+      }
 
     } catch (error) {
       console.error('Error generating feedback:', error);

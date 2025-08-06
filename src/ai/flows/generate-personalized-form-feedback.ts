@@ -79,7 +79,40 @@ const generatePersonalizedFormFeedbackFlow = ai.defineFlow(
     outputSchema: GeneratePersonalizedFormFeedbackOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input, { model: gpt4o });
-    return output!;
+    try {
+      const completion = await ai.generate({
+        model : gpt4o,
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert AI personal trainer providing personalized feedback on exercise form."
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              exerciseName: input.exerciseName,
+              userExpertiseLevel: input.userExpertiseLevel,
+              userJointAngles: input.userJointAngles,
+              canonicalJointAngles: input.canonicalJointAngles
+            }, null, 2)
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+
+      // Handle the response safely, ensuring we have a string
+      let feedbackText = "Unable to generate feedback";
+      if (completion && typeof completion.text === 'string') {
+        feedbackText = completion.text;
+      }
+
+      return {
+        feedback: feedbackText
+      };
+    } catch (error) {
+      console.error('Feedback generation error:', error);
+      throw new Error('Failed to generate feedback');
+    }
   }
 );
