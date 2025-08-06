@@ -59,10 +59,9 @@ export function FormVerseClient() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.play().then(() => {
-            setIsWebcamOn(true);
-            start(videoRef.current!);
-          });
+          await videoRef.current.play();
+          setIsWebcamOn(true);
+          start(videoRef.current!);
         }
       } catch (err) {
         console.error('Error accessing webcam:', err);
@@ -113,15 +112,16 @@ export function FormVerseClient() {
 
   useEffect(() => {
     if (landmarks.length > 0 && isWebcamOn) {
-      const { repThresholds, joints } = exerciseData;
-      const primaryJointPoints = relevantJoints[repThresholds.joint];
+      const { repThresholds, joints, canonicalAngles } = exerciseData;
+      const primaryJointName = repThresholds.joint;
+      const primaryJointPoints = relevantJoints[primaryJointName];
       if (!primaryJointPoints) return;
+      
+      const p1 = landmarks[relevantJoints[primaryJointName]['points'][0]];
+      const p2 = landmarks[relevantJoints[primaryJointName]['points'][1]];
+      const p3 = landmarks[relevantJoints[primaryJointName]['points'][2]];
 
-      const p1 = landmarks[primaryJointPoints[0]];
-      const p2 = landmarks[primaryJointPoints[1]];
-      const p3 = landmarks[primaryJointPoints[2]];
-
-      if (p1 && p2 && p3 && p1.visibility! > 0.5 && p2.visibility! > 0.5 && p3.visibility! > 0.5) {
+      if (p1 && p2 && p3 && (p1.visibility ?? 0) > 0.5 && (p2.visibility ?? 0) > 0.5 && (p3.visibility ?? 0) > 0.5) {
         const angle = calculateAngle3D(p1, p2, p3);
 
         if (repState === 'extended' && angle < repThresholds.contracted) {
@@ -129,10 +129,11 @@ export function FormVerseClient() {
           const currentAngles: Record<string, number> = {};
           joints.forEach(joint => {
             const jointKey = joint as keyof typeof relevantJoints;
-            const j_p1 = landmarks[relevantJoints[jointKey][0]];
-            const j_p2 = landmarks[relevantJoints[jointKey][1]];
-            const j_p3 = landmarks[relevantJoints[jointKey][2]];
-            if(j_p1 && j_p2 && j_p3 && j_p1.visibility! > 0.5 && j_p2.visibility! > 0.5 && j_p3.visibility! > 0.5) {
+            const jointInfo = relevantJoints[jointKey];
+            const j_p1 = landmarks[jointInfo['points'][0]];
+            const j_p2 = landmarks[jointInfo['points'][1]];
+            const j_p3 = landmarks[jointInfo['points'][2]];
+            if(j_p1 && j_p2 && j_p3 && (j_p1.visibility ?? 0) > 0.5 && (j_p2.visibility ?? 0) > 0.5 && (j_p3.visibility ?? 0) > 0.5) {
               currentAngles[joint] = calculateAngle3D(j_p1, j_p2, j_p3);
             }
           });

@@ -6,15 +6,19 @@ export type Joint =
   | 'left_knee' | 'right_knee'
   | 'left_ankle' | 'right_ankle';
 
-export const relevantJoints = {
-  left_shoulder: ['left_elbow', 'left_shoulder', 'left_hip'],
-  right_shoulder: ['right_elbow', 'right_shoulder', 'right_hip'],
-  left_elbow: ['left_wrist', 'left_elbow', 'left_shoulder'],
-  right_elbow: ['right_wrist', 'right_elbow', 'right_shoulder'],
-  left_hip: ['left_shoulder', 'left_hip', 'left_knee'],
-  right_hip: ['right_shoulder', 'right_hip', 'right_knee'],
-  left_knee: ['left_hip', 'left_knee', 'left_ankle'],
-  right_knee: ['right_hip', 'right_knee', 'right_ankle'],
+export const relevantJoints: Record<Joint, {points: [number, number, number]}> = {
+  left_shoulder: { points: [13, 11, 23] },
+  right_shoulder: { points: [14, 12, 24] },
+  left_elbow: { points: [15, 13, 11] },
+  right_elbow: { points: [16, 14, 12] },
+  left_hip: { points: [11, 23, 25] },
+  right_hip: { points: [12, 24, 26] },
+  left_knee: { points: [23, 25, 27] },
+  right_knee: { points: [24, 26, 28] },
+  left_wrist: { points: [13, 15, 17] }, // Placeholder, not used for angle
+  right_wrist: { points: [14, 16, 18] }, // Placeholder, not used for angle
+  left_ankle: { points: [25, 27, 31] }, // Placeholder, not used for angle
+  right_ankle: { points: [26, 28, 32] }, // Placeholder, not used for angle
 };
 
 export type Exercise = {
@@ -22,8 +26,8 @@ export type Exercise = {
   name: string;
   joints: Joint[];
   canonicalAngles: {
-    contracted: Record<Joint, number>;
-    extended: Record<Joint, number>;
+    contracted: Partial<Record<Joint, number>>;
+    extended: Partial<Record<Joint, number>>;
   };
   repThresholds: {
     contracted: number;

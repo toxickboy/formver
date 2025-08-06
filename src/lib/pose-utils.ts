@@ -1,4 +1,5 @@
 import type { Landmark } from "@mediapipe/tasks-vision";
+import { relevantJoints } from "./exercises";
 
 type Point3D = { x: number; y: number; z: number };
 
@@ -36,6 +37,7 @@ export function drawLandmarks(
   feedbackForJoints: Record<string, boolean>
 ) {
   if (!landmarks) return;
+  
   const landmarkIndices = {
     left_hip: 23,
     right_hip: 24,
@@ -50,7 +52,7 @@ export function drawLandmarks(
     left_ankle: 27,
     right_ankle: 28,
   };
-
+  
   const jointIndices = Object.values(landmarkIndices);
 
   ctx.fillStyle = 'rgba(160, 89, 245, 0.8)';
@@ -82,7 +84,7 @@ export function drawConnections(ctx: CanvasRenderingContext2D, landmarks: Landma
   POSE_CONNECTIONS.forEach((pair) => {
     const [start, end] = pair;
     if (landmarks[start] && landmarks[end]) {
-      if (landmarks[start].visibility > 0.5 && landmarks[end].visibility > 0.5) {
+      if ((landmarks[start].visibility ?? 0) > 0.5 && (landmarks[end].visibility ?? 0) > 0.5) {
         ctx.beginPath();
         ctx.moveTo(landmarks[start].x * ctx.canvas.width, landmarks[start].y * ctx.canvas.height);
         ctx.lineTo(landmarks[end].x * ctx.canvas.width, landmarks[end].y * ctx.canvas.height);
