@@ -12,6 +12,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {gpt4o} from 'genkitx-openai';
 
 const GeneratePersonalizedFormFeedbackInputSchema = z.object({
   userJointAngles: z.record(z.string(), z.number()).describe('The joint angles of the user during the exercise, as a map of joint name to angle in degrees.'),
@@ -78,7 +79,7 @@ const generatePersonalizedFormFeedbackFlow = ai.defineFlow(
     outputSchema: GeneratePersonalizedFormFeedbackOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { model: gpt4o });
     return output!;
   }
 );

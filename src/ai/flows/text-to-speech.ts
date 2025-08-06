@@ -9,8 +9,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import wav from 'wav';
-import {googleAI} from '@genkit-ai/googleai';
+// @ts-ignore
+import * as wav from 'wav';
+import openAI, { tts1Hd } from 'genkitx-openai';
 
 const TextToSpeechOutputSchema = z.object({
   media: z.string().describe("The base64 encoded audio data with a data URI."),
@@ -52,14 +53,9 @@ const textToSpeechFlow = ai.defineFlow(
   },
   async (query) => {
     const { media } = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      model: tts1Hd,
       config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
-          },
-        },
+        voice: 'alloy', // OpenAI voices: alloy, echo, fable, onyx, nova, or shimmer
       },
       prompt: query,
     });

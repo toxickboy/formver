@@ -16,7 +16,7 @@ FormVerse is an interactive web application that acts as your personal AI-powere
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **AI/ML**:
     - [Genkit](https://firebase.google.com/docs/genkit): For building and managing AI flows.
-    - [Google Gemini](https://ai.google.dev/): Powers the personalized feedback and text-to-speech capabilities.
+    - [OpenAI GPT-4](https://openai.com/gpt-4): Powers the personalized feedback and text-to-speech capabilities.
     - [MediaPipe](https://developers.google.com/mediapipe): For in-browser pose detection.
 - **UI**:
     - [React](https://react.dev/)
@@ -50,11 +50,11 @@ Follow these instructions to get a local copy of the project up and running for 
     ```bash
     cp .env.example .env
     ```
-    You will need to add your Google AI API key to this file. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    You will need to add your OpenAI API key to this file. You can obtain one from [OpenAI Platform](https://platform.openai.com/api-keys).
 
     ```env
     # .env
-    GEMINI_API_KEY=YOUR_API_KEY_HERE
+    OPENAI_API_KEY=YOUR_API_KEY_HERE
     ```
 
 4.  **Run the Genkit developer server:**
@@ -77,7 +77,7 @@ Follow these instructions to get a local copy of the project up and running for 
 
 The application captures video from the webcam and feeds it into the **MediaPipe PoseLandmarker** model, which runs entirely in the browser. This model detects the 3D coordinates of the user's body joints.
 
-When the user completes a repetition (e.g., reaching the bottom of a squat), the application captures the current joint angles and sends them to a **Genkit flow**. This flow uses the **Gemini AI model** to compare the user's angles to the "ideal" angles defined for that exercise.
+When the user completes a repetition (e.g., reaching the bottom of a squat), the application captures the current joint angles and sends them to a **Genkit flow**. This flow uses the **OpenAI GPT-4 model** to compare the user's angles to the "ideal" angles defined for that exercise.
 
 The AI generates personalized, constructive feedback, which is then sent to a **Text-to-Speech (TTS) flow** to be converted into audio. The feedback text is displayed on the screen, and the audio is played back to the user.
 
