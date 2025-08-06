@@ -112,7 +112,7 @@ export function FormVerseClient() {
 
   useEffect(() => {
     if (landmarks.length > 0 && isWebcamOn) {
-      const { repThresholds, joints, canonicalAngles } = exerciseData;
+      const { repThresholds, joints } = exerciseData;
       const primaryJointName = repThresholds.joint;
       const primaryJointPoints = relevantJoints[primaryJointName];
       if (!primaryJointPoints) return;
@@ -126,6 +126,7 @@ export function FormVerseClient() {
 
         if (repState === 'extended' && angle < repThresholds.contracted) {
           setRepState('contracted');
+          setRepCount(prev => prev + 1);
           const currentAngles: Record<string, number> = {};
           joints.forEach(joint => {
             const jointKey = joint as keyof typeof relevantJoints;
@@ -140,7 +141,6 @@ export function FormVerseClient() {
           getFeedback(currentAngles, exerciseData);
         } else if (repState === 'contracted' && angle > repThresholds.extended) {
           setRepState('extended');
-          setRepCount(prev => prev + 1);
         }
       }
     }
