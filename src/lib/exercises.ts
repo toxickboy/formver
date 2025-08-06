@@ -93,7 +93,9 @@ export const exercises: Record<string, Exercise> = {
         joint: 'right_knee',
     }
   }
-};
+};git remote add origin https://github.com/toxickboy/formverse.git
+git branch -M main
+git push -u origin main
 
 export const getExercises = () => Object.values(exercises).map(({ key, name }) => ({ key, name }));
 export const getExerciseData = (key: string) => exercises[key];
