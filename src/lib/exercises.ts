@@ -78,6 +78,20 @@ export const exercises: Record<string, Exercise> = {
         extended: 90,
         joint: 'right_shoulder'
     }
+  },
+  lunges: {
+    key: 'lunges',
+    name: 'Lunges',
+    joints: ['left_knee', 'right_knee', 'left_hip', 'right_hip'],
+    canonicalAngles: {
+      contracted: { left_knee: 90, right_knee: 90, left_hip: 100, right_hip: 100 },
+      extended: { left_knee: 175, right_knee: 175, left_hip: 175, right_hip: 175 },
+    },
+    repThresholds: {
+        contracted: 100,
+        extended: 160,
+        joint: 'right_knee',
+    }
   }
 };
 
